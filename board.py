@@ -18,6 +18,10 @@ from board_util import GoBoardUtil, BLACK, WHITE, EMPTY, BORDER, FLOODFILL
 
 class GoBoard(object):
 
+    def getMsg(self,point,color):
+        _, msg =self._play_move(point,color)
+        return msg
+    
     def move(self, point, color):
         """
         Play a move on the board.
@@ -28,9 +32,11 @@ class GoBoard(object):
         """
         move_inspection, msg =self._play_move(point,color)
         if not move_inspection:
+            self.msg = msg
             return False
         else:
             self.last_played_color = color
+            self.msg = msg
             return True
 
     @staticmethod
@@ -140,8 +146,8 @@ class GoBoard(object):
                 point = self._coord_to_point(x,y)
                 if self.get_color(point)!=EMPTY:
                     continue
-                if self.is_eye(point,color):
-                    continue
+#                if self.is_eye(point,color):
+#                    continue
                 if self.ko_constraint==point:
                     continue
                 moves.append(point)
@@ -411,7 +417,7 @@ class GoBoard(object):
 
         if self.board[point] != EMPTY:
             c=self._point_to_coord(point)
-            msg = "Row and Column: %d %d is already filled with a %s stone"%(c[0],c[1],GoBoardUtil.int_to_color(color))
+            msg = "occupied"
             return False,msg
         if point == self.ko_constraint:
             msg ="KO move is not permitted!"
@@ -430,10 +436,12 @@ class GoBoard(object):
                     fboard = self._flood_fill(n)
                     if not self._liberty_flood(fboard):
                         cap_inds = fboard==FLOODFILL
-#                        self.board[point] = EMPTY
                         #self.caps = np.where(fboard==FLOODFILL)
                         self.caps += list(*np.where(fboard==FLOODFILL))
                         num_captures = np.sum(cap_inds)
+                        self.board[point] = EMPTY
+                        msg = "capture"
+                        return False, msg
 #                        if num_captures == self.size*self.size:
 #                            self._is_empty = True
 #                        if num_captures == 1:
@@ -442,9 +450,7 @@ class GoBoard(object):
 #                            self.white_captures += num_captures
 #                        else :
 #                            self.black_captures += num_captures
-                        self.board[cap_inds]=EMPTY
-                        msg = "capture"
-                        return False, msg
+#                        self.board[cap_inds]=EMPTY
         in_enemy_eye = self._is_eyeish(point) != color
         fboard = self._flood_fill(point)
         self.ko_constraint = single_captures[0] if in_enemy_eye and len(single_captures) == 1 else None
@@ -459,7 +465,6 @@ class GoBoard(object):
             if cap_inds!= None:
                 self.board[cap_inds]=GoBoardUtil.opponent(color)
             c=self._point_to_coord(point)
-#            msg = "Suicide move with color %s in the row and column: %d %d "%(color, c[0],c[1])
             msg = "suicide"
             return False, msg
 

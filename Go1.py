@@ -1,4 +1,3 @@
-
 #!/Users/sumeyyeaydin/anaconda3/bin/python3
 
 from gtp_connection import GtpConnection

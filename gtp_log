@@ -1,0 +1,116 @@
+= Go1
+
+= 2
+
+= 0.1
+
+= protocol_version play quit boardsize set_free_handicap showboard legal_moves known_command clear_board list_commands final_score version genmove name komi
+
+= 
+
+= 
+
+= 
+
+= 
+
+= 
+
+= g3
+
+= b2
+
+= e4
+
+= a1
+
+= e1
+
+= f6
+
+= g1
+
+= f5
+
+= d2
+
+= a4
+
+= e6
+
+= d5
+
+= g6
+
+= b5
+
+= e7
+
+= d6
+
+= f1
+
+= e3
+
+= b4
+
+= d7
+
+= f4
+
+= g7
+
+= d3
+
+= f7
+
+= a3
+
+= e2
+
+= c4
+
+= c7
+
+= c6
+
+= f3
+
+= b3
+
+= c2
+
+= a7
+
+= c5
+
+= g4
+
+= b1
+
+= c3
+
+= a5
+
+= d4
+
+= d1
+
+= g5
+
+= b7
+
+= a2
+
+= f2
+
+= a6
+
+= illegal move: passing
+
+= 
+
+= 
+
+= 
+
