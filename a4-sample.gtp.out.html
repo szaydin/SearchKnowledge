@@ -1,0 +1,229 @@
+<html>
+<head>
+<title>Output: a4-sample.gtp</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="generator" content="gogui-regress 1.4.9 (http://gogui.sf.net)">
+<style type="text/css">
+<!--
+body { margin:0; }
+span.comment { color:#999999; }
+span.fail { font-weight:bold; color:#ff5454; }
+span.error { font-weight:bold; color:#ffa954; }
+span.stderr { color:#666666; }
+span.invalid { background:#ff5454;}
+span.pass { font-weight:bold; color:#5eaf5e; }
+span.test { font-weight:bold; }
+-->
+</style>
+</head>
+<body bgcolor="white" text="black" link="#0000ee" vlink="#551a8b">
+<table border="0" width="100%" bgcolor="#91aee8" border="0">
+<tr><td>
+<h1>Output: a4-sample.gtp</h1>
+</td></tr>
+</table>
+<table width="100%" bgcolor="#e0e0e0">
+<tr><th align="left">Date:</th><td>April 9, 2017 11:55:11 PM MDT</td></tr>
+<tr><th align="left">Host:</th><td>?</td></tr>
+<tr><th align="left" valign="top">Command:</th>
+<td valign="top"><tt>python3 policy_probabilistic_player.py</tt></td></tr>
+</table>
+<pre style="margin:1em">
+name
+<span class="invalid">Invalid response: Load Features_weight from features_weight.dat ...
+</span>= PolicyProbabilisticPlayer
+
+version
+= 0.1
+
+cputime
+? Unknown command
+
+</pre>
+<hr style="margin:1em" size="1">
+<pre style="margin:1em">
+<span class="command">boardsize 5
+</span>= 
+
+<span class="command">clear_board
+</span>= 
+
+
+<span class="command">play b c3
+</span>= 
+
+
+<span class="command">play w c2
+</span>= 
+
+
+<span class="command">play b d2
+</span>= 
+
+
+<span class="command">play w b3
+</span>= 
+
+
+<span class="command">play b b4
+</span>= 
+
+
+<span class="command">play w c4
+</span>= 
+
+
+<span class="command">play b d3
+</span>= 
+
+
+<span class="command">play w d4
+</span>= 
+
+
+<span class="command">play b e4
+</span>= 
+
+
+<span class="command">play w b5
+</span>= 
+
+
+<span class="command">play b a4
+</span>= 
+
+
+<span class="command">play w b1
+</span>= 
+
+
+<span class="command">play b c5
+</span>= 
+
+
+<span class="command">play w d5
+</span>= 
+
+
+<span class="command">play b a3
+</span>= 
+
+
+<span class="command">play w d1
+</span>= 
+
+
+<span class="command">play b b2
+</span>= 
+
+
+<span class="command">play w a2
+</span>= 
+
+
+<span class="test"><a name="10">10 policy_moves
+</a>#? [a1 0.74976 c1 0.17378 b3 0.02501 e3 0.01386 e2 0.01103 a5 0.01049 e1 0.01029 e5 0.00578]
+= a1 0.74976 c1 0.17378 b3 0.02501 e3 0.01386 e2 0.01103 a5 0.01049 e1 0.01029 e5 0.00578 
+
+</span>
+<span class="command">play b a1
+</span>= 
+
+
+<span class="command">play w e2
+</span>= 
+
+
+<span class="command">play b c1
+</span>= 
+
+
+<span class="command">play w c5
+</span>= 
+
+
+<span class="command">play b a5
+</span>= 
+
+
+<span class="command">play w e1
+</span>= 
+
+
+<span class="command">play b e5
+</span>= 
+
+
+<span class="command">play w b5
+</span>= 
+
+
+<span class="command">play b c5
+</span>= 
+
+
+<span class="test"><a name="20">20 policy_moves
+</a>#? [c4 0.55066 d5 0.26048 d4 0.18885]
+= c4 0.55066 d5 0.26048 d4 0.18885 
+
+</span>
+<span class="command">play w d5
+</span>= 
+
+
+<span class="command">play b c4
+</span>= 
+
+
+<span class="test"><a name="30">30 policy_moves
+</a>#? [pass 1.00000]
+= pass 1.00000
+
+</span><span class="comment"># comment: there is no other moves than pass for white
+</span>
+<span class="command">play w pass
+</span>= 
+
+
+<span class="test"><a name="40">40 policy_moves
+</a>#? [d4 0.76052 e3 0.23948]
+= d4 0.76052 e3 0.23948 
+
+</span><span class="comment"># comment: there are still moves available for black
+</span>
+<span class="command">play b d4
+</span>= 
+
+
+<span class="test"><a name="50">50 policy_moves
+</a>#? [pass 1.00000]
+= pass 1.00000
+
+</span><span class="comment"># comment: there is no other moves than pass for white
+</span>
+<span class="command">play w pass
+</span>= 
+
+
+<span class="test"><a name="60">60 policy_moves
+</a>#? [e3 1.00000]
+= e3 1.00000 
+
+</span><span class="comment"># comment: there are still moves available for black
+</span>
+
+
+</pre>
+<hr style="margin:1em" size="1">
+<pre style="margin:1em">
+cputime
+? Unknown command
+
+quit
+= 
+
+</pre>
+<hr style="margin-bottom:0" size="1">
+<p style="margin-top:1; margin-right:5" align="right"><i><small>Generated on 4/9/17 11:55 PM by gogui-regress 1.4.9 (<a href="http://gogui.sf.net">http://gogui.sf.net</a>)</small></i></p>
+</body>
+</html>
