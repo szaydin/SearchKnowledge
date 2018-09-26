@@ -12,43 +12,56 @@ glossary:
 
 """
 
-
 import numpy as np
-from board_util import GoBoardUtil, BLACK, WHITE, EMPTY, BORDER, FLOODFILL 
+import copy
+from board_util import GoBoardUtil, BLACK, WHITE, EMPTY, BORDER, FLOODFILL
 
 class GoBoard(object):
 
-    def getMsg(self,point,color):
-        _, msg =self._play_move(point,color)
-        return msg
-    
     def move(self, point, color):
         """
-        Play a move on the board.
-        Argumnets:
+            Play a move on the board.
+            Arguments:
             point
-        Return:
+            Return:
             color
         """
-        move_inspection, msg =self._play_move(point,color)
+        move_inspection, msg = self._play_move(point,color)
         if not move_inspection:
-            self.msg = msg
             return False
         else:
-            self.last_played_color = color
-            self.msg = msg
-            return True
+            self.current_player = GoBoardUtil.opponent(color)
+            self.last3_move = self.last2_move
+            self.last2_move = self.last_move
+            self.last_move = point
+            self.moves.append(point)
+            self.winner = None
+        return True
 
+    # not a full implementation of undo, just usable for a quick 1 step back
+    def partial_undo_move(self):
+        if len(self.moves) == 0:
+            return
+        self.last_move = self.last2_move
+        self.last2_move = self.last3_move
+        last_point = self.moves.pop()
+        if last_point != None:
+            self.board[last_point] = EMPTY
+            if len(self.captured_stones)>0:
+                c = self.current_player
+                for p in self.captured_stones:
+                    self.board[p] = c
+        self.current_player = GoBoardUtil.opponent(self.current_player);
+    
     @staticmethod
     def showboard(board,bd_size):
         #TODO: would be nice to have a nicer printout of the board
         pass
 
-
     def get_color(self, point):
         """
         Return the state of the specified point.
-        Argumnets:
+        Arguments:
             point
         Return:
             color
@@ -57,58 +70,54 @@ class GoBoard(object):
 
     def check_legal(self,point,color):
         """
-        Argumnets:
+        Arguments:
             point, color
         Return:
             bool
             Whether the playing point with the given color is
             legal.
         """
-        sboard = np.array(self.board, copy=True)
+        cboard = self.copy()
         # swap out true board for simulation board, and try to play the move
-        result, _=self._play_move(point, color)
-        # reset true board; return result
-        self.board = sboard
+        result, _ = cboard._play_move(point, color)
         return result
 
     def final_score(self,komi):
         """
-        Calculate score of board state and return player ID (1, -1, or 0 for tie)
-        corresponding to winner. Uses 'Area scoring'.
-        Argumnets:
+        Calculate score of board state and return result as a string. 
+        Uses 'Area scoring'.
+        Arguments:
             komi, number of points added to white because of starting second
         Returns:
-            score: score of the game in the format of `X+{n}` where is either B or W
-            and n is number of points that color has more than the other.
-        This function is based of https://github.com/Rochester-NRT/RocAlphaGo/blob/develop/AlphaGo/go.py --> get_winner
+            score: score of the game in the format 'C+{n}' or '0' where
+                C is a color, either B or W
+                n is the winning margin
+                0 indicates a draw
+        This function is based on https://github.com/Rochester-NRT/RocAlphaGo/blob/develop/AlphaGo/go.py --> get_winner
         """
         # Count number of positions filled by each player, plus 1 for each eye-ish space owned
-        score_white = np.sum(self.board == WHITE)
-        score_black = np.sum(self.board == BLACK)
+        score = np.sum(self.board == BLACK)
+        score -= np.sum(self.board == WHITE)
         empties = list(*np.where(self.board == EMPTY))
         for empty in empties:
-            # Check that all surrounding points are of one color
-            result = self._is_eyeish(empty)
-            if result==BLACK:
-                score_black += 1
-            elif result==WHITE:
-                score_white += 1
-        score_white += komi
-        score_white -= self.passes_white
-        score_black -= self.passes_black
-        if score_black > score_white:
+            # Check if all surrounding points are of one color
+            color = self._is_eyeish(empty)
+            if color == BLACK:
+                score += 1
+            elif color == WHITE:
+                score -= 1
+        score -= komi
+        score += self.passes_white
+        score -= self.passes_black
+        result = "0"
+        if score > 0:
             self.winner = BLACK
-        elif score_white > score_black:
+            result = "B+{}".format(score)
+        elif score < 0:
             self.winner = WHITE
-        else:
-            # Tie
-            self.winner = 0
-        if self.winner==1:
-            result="B+{}".format( score_black - score_white )
-
-        else:
-            result="W+{}".format(score_white - score_black )
-
+            result = "W+{}".format(-score)
+        else: # Tie
+            self.winner = EMPTY
         return result
 
     def get_winner(self,komi):
@@ -120,7 +129,7 @@ class GoBoard(object):
             self.final_score(komi)
         return self.winner
 
-    def get_twoD_board(self,):
+    def get_twoD_board(self):
         """
         Return: numpy array
         a two dimensional numpy array with same values as in the self.board without having the borders
@@ -132,31 +141,21 @@ class GoBoard(object):
         return board
 
         
-    def get_empty_positions(self, color):
-        """
-        Argumnets:
-            color
-        This function return a list of moves for current player.
-        Return:
-            list of empty poisitions by excluding eye points and KO constraint points 
-        """
+    def get_empty_points(self):
         moves = []
-        for y in range(1,self.size+1,1):
-            for x in range(1,self.size+1,1):
+        for x in range(1,self.size+1):
+            for y in range(1,self.size+1):
                 point = self._coord_to_point(x,y)
-                if self.get_color(point)!=EMPTY:
-                    continue
-#                if self.is_eye(point,color):
-#                    continue
-                if self.ko_constraint==point:
-                    continue
-                moves.append(point)
-        return moves;
-
+                if self.get_color(point) == EMPTY:
+                    moves.append(point)
+        return moves
+        
+    def filleye_filter(self, point):
+        return self.is_eye(point,self.current_player)
 
     def __init__(self, size):
         """
-        Creates a board that uses 1 dimenstional reperesentaion of for points
+        Creates a board that uses 1-dimensional representaion of for points
         ----------
         This board has the following functionalities:
             1. move :plays a move at given point
@@ -182,7 +181,7 @@ class GoBoard(object):
         self.size = size
         self.NS = size + 1
         self.WE=  1
-        self.suicide = True # checking for suicide move
+        self.check_suicide = True # check for suicidal moves
         self._is_empty = True
         self.ko_constraint = None
         self.passes_white = 0
@@ -190,10 +189,15 @@ class GoBoard(object):
         self.white_captures = 0
         self.black_captures = 0
         self.current_player= BLACK
-        self.last_played_color=None
         self.winner = None
         self._empty_positions = {BLACK:[],WHITE:[]}
-        self.maxpoint = size*size + 3*(size+1)  # Attention we are doing zero indexing so everything is of by one
+        self.maxpoint = size*size + 3*(size+1)  # Zero indexing
+        self.moves = []
+        self.last_move = None
+        self.last2_move = None
+        self.last3_move = None
+        self.captured_stones = []
+        
         """
         The array is one-dimensional and this representation is achieved through _coord_to_point function
         This is an example of 3x3 board point numbering (indices of numpy array).
@@ -225,20 +229,9 @@ class GoBoard(object):
     def copy(self):
         """Return an independent copy of this Board."""
         b = GoBoard(self.size)
-        b.board = np.copy(self.board)
-        b.suicide = self.suicide  # checking for suicide move
-        b.winner = self.winner
-        b.NS = self.NS
-        b.WE = self.WE
-        b.last_played_color = self.last_played_color
-        b._is_empty = self._is_empty
-        b.passes_black = self.passes_black
-        b.passes_white = self.passes_white
-        b.current_player = self.current_player
-        b.ko_constraint =  self.ko_constraint
-        b.white_captures = self.white_captures
-        b.black_captures = self.black_captures 
-
+        b.__dict__ = copy.deepcopy(self.__dict__)
+        assert b.board.all() == self.board.all()
+        assert vars(b)==vars(b)
         return b
 
 
@@ -274,7 +267,7 @@ class GoBoard(object):
             return None
         if eye_color == None:
             return None
-        # Eye-like shape, but it could be a falsified eye
+        # Eye-like shape, but it could be a false eye
         false_color = GoBoardUtil.opponent(eye_color)
         false_count = 0
         at_edge = False
@@ -309,24 +302,28 @@ class GoBoard(object):
         This is based on https://github.com/pasky/michi/blob/master/michi.py --> is_eyeish
         
         """
-        if self.board[point] != EMPTY:
-            return None
-        first=True
+        eye_color = None
         for n in self._neighbors(point):
             if self.board[n] == BORDER:
                 continue
             if self.board[n] == EMPTY:
                 return None
-            if first:
+            if eye_color==None:
                 eye_color = self.board[n]
-                first = False
             else:
                 if self.board[n] != eye_color:
                     return None
         return eye_color
+    
+    def _single_liberty(self, point, color):
+        """
+        This functions returns point that is last liberty of a point
+        """
+        _, point = self._liberty_point(point,color)
+        return point
 
 
-    def _liberty(self,point,color):
+    def _liberty(self, point, color):
         """
         ---------
         Return
@@ -334,7 +331,14 @@ class GoBoard(object):
         liberty: int
              Number of liberty that the given point has
         """
+        num_lib, _ = self._liberty_point(point, color)
+        return num_lib
 
+
+    def _liberty_point(self, point, color):
+        """
+        Underlying function for returning number of liberty and last liberty for the point
+        """
         group_points = [point]
         liberty=0
         met_points=[point]
@@ -343,14 +347,18 @@ class GoBoard(object):
             met_points.append(p)
             neighbors = self._neighbors(p)
             for n in neighbors:
-                if self.board[n]==BORDER:
-                    continue
-                if self.board[n]==color and n not in met_points:
-                    group_points.append(n)
-                elif self.board[n]==EMPTY and n not in met_points:
-                    liberty+=1
-        return liberty
-
+                if n not in met_points:
+                    if self.board[n]==BORDER:
+                        continue
+                    if self.board[n]==color: 
+                        group_points.append(n)
+                    elif self.board[n]==EMPTY:
+                        liberty+=1
+                        single_lib_point = n
+                    met_points.append(n)
+        if liberty == 1:
+            return liberty, single_lib_point
+        return liberty, None
 
     def _liberty_flood(self,board):
         """
@@ -414,17 +422,22 @@ class GoBoard(object):
         ---------
         State of move and appropriate message for that move
         """
-
+        
+        if point == None: #play a pass move
+            msg = "Playing a pass move with %s color is permitted"%(color)
+            return True, msg
+        
         if self.board[point] != EMPTY:
             c=self._point_to_coord(point)
-            msg = "occupied"
+            msg = "Row and Column: %d %d is already filled with a %s stone"%(c[0],c[1],GoBoardUtil.int_to_color(color))
             return False,msg
         if point == self.ko_constraint:
             msg ="KO move is not permitted!"
             return False , msg
+        in_enemy_eye = self._is_eyeish(point) == GoBoardUtil.opponent(color)
         self.board[point] = color
         self._is_empty = False
-        self.caps = []
+        self.captured_stones = []
         single_captures = []
         cap_inds = None
         neighbors = self._neighbors(point)
@@ -436,36 +449,34 @@ class GoBoard(object):
                     fboard = self._flood_fill(n)
                     if not self._liberty_flood(fboard):
                         cap_inds = fboard==FLOODFILL
-                        #self.caps = np.where(fboard==FLOODFILL)
-                        self.caps += list(*np.where(fboard==FLOODFILL))
+                        self.captured_stones += list(*np.where(fboard==FLOODFILL))
                         num_captures = np.sum(cap_inds)
-                        self.board[point] = EMPTY
-                        msg = "capture"
-                        return False, msg
-#                        if num_captures == self.size*self.size:
-#                            self._is_empty = True
-#                        if num_captures == 1:
-#                            single_captures.append(n)
-#                        if color==WHITE:
-#                            self.white_captures += num_captures
-#                        else :
-#                            self.black_captures += num_captures
-#                        self.board[cap_inds]=EMPTY
-        in_enemy_eye = self._is_eyeish(point) != color
+                        if num_captures == self.size*self.size:
+                            self._is_empty = True
+                        if num_captures == 1:
+                            single_captures.append(n)
+                        if color==WHITE:
+                            self.white_captures += num_captures
+                        else :
+                            self.black_captures += num_captures
+                        self.board[cap_inds]=EMPTY
         fboard = self._flood_fill(point)
         self.ko_constraint = single_captures[0] if in_enemy_eye and len(single_captures) == 1 else None
-        if self._liberty_flood(fboard) and self.suicide:
+        if not self.check_suicide:
+            msg = "NO SUICIDE CHECKING. Playing a move with %s color in the row and column %d %d is permitted"%(color,c[0],c[1])
+            return True, msg
+        if self._liberty_flood(fboard):
             #non suicidal move
             c=self._point_to_coord(point)
-            msg = "Playing a move with %s color in the row and column %d %d is permited"%(color,c[0],c[1])
+            msg = "Playing a move with %s color in the row and column %d %d is permitted"%(color,c[0],c[1])
             return True, msg
         else:
             # undoing the move because of being suicidal
             self.board[point] = EMPTY
             if cap_inds!= None:
                 self.board[cap_inds]=GoBoardUtil.opponent(color)
-            c=self._point_to_coord(point)
-            msg = "suicide"
+            c = self._point_to_coord(point)
+            msg = "Suicide move with color %s in the row and column: %d %d "%(color, c[0],c[1])
             return False, msg
 
 
@@ -481,11 +492,7 @@ class GoBoard(object):
         points : list of int
             coordinate of points which are neighbors of the given point
         """
-        #row,col = self._point_to_coord(point)
-        #if 0 <= row <= self.size+1 and 0 <= col <= self.size+1:
         return [point-1, point+1, point-self.NS, point+self.NS]
-        #else:
-        #    raise ValueError("This point is out of range!")
 
 
     def _diag_neighbors(self,point):
@@ -501,13 +508,75 @@ class GoBoard(object):
             coordinate of points which are diagnoal neighbors of the given point
         """
 
-        #row,col = self._point_to_coord(point)
-        #if 0 <= row <= self.size+1 and 0 <= col <= self.size+1:
         return [point-self.NS-1, point-self.NS+1, point+self.NS-1, point+self.NS+1]
-        #else:
-        #    raise ValueError("This point is out of range!")
 
+    def neighborhood_33(self,point):
+        """
+        Get the pattern around point.
+        Returns
+        -------
+        patterns :
+        Set of patterns in the same format of what michi pattern base provides. Please refer to pattern.py to see the format of the pattern.
+        """
+        positions = [point-self.NS-1, point-self.NS, point-self.NS+1,
+                     point-1, point, point+1,
+                     point+self.NS-1, point+self.NS, point+self.NS+1]
+                     
+        pattern = ""
+        for d in positions:
+            if self.board[d] == self.current_player:
+                pattern += 'X'
+            elif self.board[d] == GoBoardUtil.opponent(self.current_player):
+                pattern += 'x'
+            elif self.board[d] == EMPTY:
+                pattern += '.'
+            elif self.board[d] == BORDER:
+                pattern += ' '
+        return pattern
+    
+    def neighborhood_33_pattern_shape(self, point):
+        """
+        Find local pattern shape around point.
+        Return a string
+        """
+        positions = [point+self.NS-1, point+self.NS, point+self.NS+1,
+                     point-1, point, point+1,
+                     point-self.NS-1, point-self.NS, point-self.NS+1]
+                     
+        pattern = ""
+        i = 0
+        for d in positions:
+            if self.board[d] == BLACK:
+                pattern += 'B'
+            elif self.board[d] == WHITE:
+                pattern += 'W'
+            elif self.board[d] == EMPTY:
+                pattern += '.'
+            elif self.board[d] == BORDER:
+                pattern += ' '
+            if i == 2 or i == 5 or i == 8:
+                pattern += '\n'
+            i = i + 1
+        return pattern
 
+    def last_moves_empty_neighbors(self):
+        """
+        Get the neighbors of last_move and second last move. 
+        This function is based on code in
+        https://github.com/pasky/michi/blob/master/michi.py
+        
+        Returns
+        -------
+        points :
+        points which are neighbors of last_move and last2_move
+        """
+        nb_list = []
+        for c in self.last_move, self.last2_move:
+            if c is None:  continue
+            nb_of_c_list = list(self._neighbors(c) + self._diag_neighbors(c))
+            nb_list += [d for d in nb_of_c_list if self.board[d] == EMPTY and d not in nb_list]
+        return nb_list
+            
     def _border_removal(self,points):
         """
         Removes Border points from a list of points received as Input and Return the result
@@ -572,7 +641,7 @@ class GoBoard(object):
         Arguments
         ---------
          x , y : int
-                 coordination of the board  1<= x <=size, 1<= y <=sizeint
+                 coordinates of the point  1 <= x, y <= size
 
         Returns
         -------
@@ -583,20 +652,11 @@ class GoBoard(object):
         return self.NS*row + col
 
     def _point_to_coord(self,point):
-        """
-        Transform one dimension presentation to two dimensional.
+        return GoBoardUtil.point_to_coord(point, self.NS)
 
-        Arguments
-        ---------
-        point
-
-        Returns
-        -------
-        x , y : int
-            coordination of the board  1<= x <=size, 1<= y <=size .
-        """
-        if point is None:
-            return 'pass'
-        row, col = divmod(point, self.NS)
-        return row,col
+    def point_to_string(self, point):
+        if point == None:
+            return 'Pass'
+        x, y = GoBoardUtil.point_to_coord(point, self.NS)
+        return GoBoardUtil.format_point((x, y))
 
