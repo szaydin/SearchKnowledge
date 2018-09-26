@@ -1,0 +1,113 @@
+# This is out tersting file for NoGo
+
+boardsize 1
+clear_board
+
+10 play b a1
+#? [illegal move: b a1 suicide]
+# This move is illegal because suicide
+
+20 legal_moves b
+#? []
+# No legal moves for b, so it will lose
+
+boardsize 2
+clear_board
+
+30 legal_moves b
+#? [ a1 a2 b1 b2]
+# All moves are legal for b
+
+play b a1
+
+40 play w a1
+#? [illegal move: w a1 occupied]
+# a1 is already occupied by b
+
+play w a2
+
+50 legal_moves b
+#? [b1]
+# There is only one space black can play
+
+60 play b b2
+#? [illegal move: b b2 capture]
+# b2 causing capturing
+
+play b b1
+
+70 legal_moves w
+#? []
+# There is no legal moves for w so W loses
+
+boardsize 3
+clear_board
+
+80 legal_moves b
+#? [ a1 a2 a3 b1 b2 b3 c1 c2 c3]
+# All moves are legal for b
+
+play b a1
+
+play w b2
+
+play b a2
+
+90 legal_moves w
+#? [a3 b1 b3 c1 c2 c3]
+# All moves are legal for w 
+
+play w a3
+
+100 legal_moves b
+#? [b1 c1 c2 c3]
+# All moves are legal for b
+
+play b c1
+
+110 legal_moves w
+#? [b3 c2 c3]
+# b1 is capture for w
+
+play w c3
+
+play b c2
+play w b3
+
+120 legal_moves b
+#? []
+# No legal move for b so B lost!
+
+boardsize 7
+clear_board
+
+play b d7
+
+130 play w d7
+#? [illegal move: w d7 occupied]
+# d7 is already occupied by b
+
+140 play r c3
+#? [illegal move: r c3 wrong color]
+# The player needs to play either black or white stone
+
+150 play c3
+#? [illegal move: c3 wrong number of arguments]
+# Need to write b or w before c3
+
+160 play w c99
+#? [illegal move: w c99 wrong coordinate]
+# given point is oversized of the board
+
+play w b1
+play b a1
+
+170 play w a2
+#? [illegal move: w a2 capture]
+
+play w b2
+play w a3
+
+180 play b a2
+#? [illegal move: b a2 suicide]
+# a2 is illegal move for b because it is suicide

@@ -157,9 +157,10 @@ class GoBoardUtil(object):
             if row < 1:
                 raise ValueError
         except (IndexError, ValueError):
-            raise ValueError("invalid point: '%s'" % s)
+            raise ValueError("wrong coordinate")
         if not (col <= board_size and row <= board_size):
-            raise ValueError("point is off board: '%s'" % s)
+            raise ValueError("wrong coordinate")
+            #raise ValueError("point is off board: '%s'" % s)
         return row, col
     
     @staticmethod
@@ -168,6 +169,7 @@ class GoBoardUtil(object):
         try:
             return opponent[color]    
         except:
+            raise ValueError("wrong color")
             raise ValueError("Wrong color provided for opponent function")
             
     @staticmethod
@@ -177,7 +179,8 @@ class GoBoardUtil(object):
         try:
            return color_to_int[c] 
         except:
-            raise ValueError("Valid color characters are: b, w, e, BORDER and FLOODFILL. please provide the input in this format ")
+            raise ValueError("wrong color")
+            #raise ValueError("Valid color characters are: b, w, e, BORDER and FLOODFILL. please provide the input in this format ")
     
     @staticmethod
     def int_to_color(i):
@@ -186,7 +189,8 @@ class GoBoardUtil(object):
         try:
            return int_to_color[i] 
         except:
-            raise ValueError("Provided integer value for color is invalid")
+            raise ValueError("wrong color")
+            #raise ValueError("Provided integer value for color is invalid")
          
     @staticmethod
     def copyb2b(board,copy_board):

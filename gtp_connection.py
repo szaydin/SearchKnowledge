@@ -52,7 +52,8 @@ class GtpConnection():
             "list_commands": self.list_commands_cmd,
             "play": self.play_cmd,
             "final_score": self.final_score_cmd,
-            "legal_moves": self.legal_moves_cmd
+            "legal_moves": self.legal_moves_cmd,
+            "cputime": self.protocol_version_cmd
         }
 
         # used for argument checking
@@ -111,6 +112,7 @@ class GtpConnection():
         if not elements:
             return
         command_name = elements[0]; args = elements[1:]
+        self.args = args
         if self.arg_error(command_name, len(args)):
             return
         if command_name in self.commands:
@@ -122,7 +124,7 @@ class GtpConnection():
                 raise e
         else:
             self.debug_msg("Unknown command: {}\n".format(command_name))
-            self.error('Unknown command')
+            self.error('Unknown command: {} {} \n\n'.format(command_name,self.args))
             sys.stdout.flush()
 
     def arg_error(self, cmd, argnum):
@@ -142,7 +144,8 @@ class GtpConnection():
         False otherwise
         """
         if cmd in self.argmap and self.argmap[cmd][0] > argnum:
-                self.error(self.argmap[cmd][1])
+                self.error(" ".join(self.args)+" wrong number of arguments")
+                #self.error(self.argmap[cmd][1])
                 return True
         return False
 
@@ -153,7 +156,8 @@ class GtpConnection():
 
     def error(self, error_msg=''):
         """ Send error msg to stdout and through the GTP connection. """
-        sys.stdout.write('? {}\n\n'.format(error_msg)); sys.stdout.flush()
+        sys.stdout.write('= illegal move: {}\n\n'.format(error_msg)); sys.stdout.flush()
+        #sys.stdout.write('? {}\n\n'.format(error_msg)); sys.stdout.flush()
 
     def respond(self, response=''):
         """ Send msg to stdout """
@@ -271,7 +275,8 @@ class GtpConnection():
             moves=GoBoardUtil.generate_legal_moves(self.board,color)
             self.respond(moves)
         except Exception as e:
-            self.respond('Error: {}'.format(str(e)))
+            self.respond('illegal move: {} {}'.format(board_color, str(e)))
+            #self.respond('Error: {}'.format(str(e)))
 
     def play_cmd(self, args):
         """
@@ -292,24 +297,27 @@ class GtpConnection():
             board_move = args[1]
             color= GoBoardUtil.color_to_int(board_color)
             if args[1].lower()=='pass':
-                self.debug_msg("Player {} is passing\n".format(args[0]))
-                self.respond()
+#                self.debug_msg("Player {} is passing\n".format(args[0]))
+                self.error("{} {} passing".format(board_color, board_move))
+                
+#                self.respond()
                 return
             move = GoBoardUtil.move_to_coord(args[1], self.board.size)
             if move:
                 move = self.board._coord_to_point(move[0],move[1])
             # move == None on pass
             else:
-                self.error("Error in executing the move %s, check given move: %s"%(move,args[1]))
+                self.error("{} {} Error in executing the move {}, check given move: {}".format(board_color, board_move, move, args[1]))
                 return
+            ## TO DO: We need to find a way to get message from the board.py... How??
             if not self.board.move(move, color):
-                self.respond("Illegal Move: {}".format(board_move))
+                self.respond("illegal move: {} {} {}".format(board_color, board_move, self.board.msg))
                 return
             else:
                 self.debug_msg("Move: {}\nBoard:\n{}\n".format(board_move, str(self.board.get_twoD_board())))
             self.respond()
         except Exception as e:
-            self.respond('Error: {}'.format(str(e)))
+            self.respond('illegal move: {} {} {}'.format(board_color, board_move, str(e)))
 
     def final_score_cmd(self, args):
         self.respond(self.board.final_score(self.komi))
@@ -334,7 +342,7 @@ class GtpConnection():
             move = self.go_engine.get_move(self.board, color)
             if move is None:
                 self.respond("pass")
-                return
+                return 
 
             if not self.board.check_legal(move, color):
                 move = self.board._point_to_coord(move)
@@ -350,5 +358,6 @@ class GtpConnection():
             board_move = GoBoardUtil.format_point(move)
             self.respond(board_move)
         except Exception as e:
-            self.respond('Error: {}'.format(str(e)))
+            self.respond('illegal move: {} {} {}'.format(board_color, board_move, str(e)))
+            #self.respond('Error: {}'.format(str(e)))
 
